@@ -1,12 +1,15 @@
 <main>
   <section class="header">
-    <div class="recording">
+    <div (click)="toggleRecording()" class="recording">
       <span>REC</span>
     </div>
   </section>
 
   <section>
     <div class="text-area">
+      <ul id="recordingsList">
+        <li>audio is here:</li>
+      </ul>
       <p class="text">
         {{ text() }}
       </p>
