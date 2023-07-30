@@ -1,6 +1,6 @@
 const express = require('express');
 const multer  = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const path = require("path");
 const bodyParser = require('body-parser');
 const { join } = require('path');
 const OpenAISummarizer = require('./ai/open-ai-service');
@@ -14,7 +14,17 @@ const uiLinks = `<a href="/">HOME</a>
                 <a href="/test">test</a>`;
 
 app.use(bodyParser.json());
-app.use(express.static(join(__dirname, 'lekai/lekai/dist/lekai')));
+
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, 'uploads/')
+    },
+    filename: function(req, file, cb) {
+        cb(null, file.fieldname + '-' + Date.now() + '.webm')
+    }
+});
+
+const upload = multer({ storage: storage })
 
 app.get("/", (req, res) => {
     res.send(`
@@ -23,8 +33,12 @@ app.get("/", (req, res) => {
     `);
 });
 
-app.post('ai/voice-to-text/audio', upload.single('audio'), (req, res) => {
-    console.log('Received audio data');
+app.post('/ai/voice-to-text/audio', upload.single('audio'), async (req, res) => {
+
+    const openAIService = new OpenAISummarizer();
+    const transcription = await openAIService.readAndTranscribeAudio(req.file.filename);
+
+    res.json({ transcription });
     res.sendStatus(200);
 });
 

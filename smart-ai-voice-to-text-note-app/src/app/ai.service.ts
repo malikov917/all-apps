@@ -9,7 +9,7 @@ export class AiService {
 
   constructor(private http: HttpClient) { }
 
-  generateTest(audio: any): Observable<any> {
+  sendAudioToServer(audio: any): Observable<any> {
     return this.http.post('/ai/voice-to-text/audio', audio);
   }
 }

@@ -1,5 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AiService } from './ai.service';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +14,7 @@ export class AppComponent implements OnInit {
   isRecording = signal(false);
   chunks = [];
   mediaRecorder: any;
+  aiService = inject(AiService);
 
   ngOnInit() {
     this.initMediaRecorder();
@@ -24,22 +26,37 @@ export class AppComponent implements OnInit {
         this.mediaRecorder = new MediaRecorder(stream);
 
         this.mediaRecorder.onstop = () => {
-          const blob = new Blob(this.chunks, { 'type' : 'audio/ogg; codecs=opus' });
-          this.chunks = [];
+          const blob = new Blob(this.chunks, { 'type' : 'audio/webm' });
           const audioURL = window.URL.createObjectURL(blob);
-          const li = document.createElement('li');
-          const audio = new Audio(audioURL);
-          audio.controls = true;
-          li.appendChild(audio);
-          // @ts-ignore
-          document.getElementById('recordingsList').appendChild(li);
+          this.addAudioChunk(audioURL);
+          this.sendAudioToServer(blob);
         };
 
         this.mediaRecorder.ondataavailable = (event: any) => {
           // @ts-ignore
           this.chunks.push(event.data);
+          console.log('event data', event.data);
+          console.log('chunks', this.chunks);
         };
       });
+  }
+
+  addAudioChunk(audioURL: string) {
+    const li = document.createElement('li');
+    const audio = new Audio(audioURL);
+    audio.controls = true;
+    li.appendChild(audio);
+    // @ts-ignore
+    document.getElementById('recordingsList').appendChild(li);
+  }
+
+  sendAudioToServer(blob: any) {
+    const formData = new FormData();
+    formData.append('audio', blob);
+    this.aiService.sendAudioToServer(formData).subscribe((res: any) => {
+      console.log('res', res);
+      this.text.set(res.text);
+    });
   }
 
   toggleRecording() {
